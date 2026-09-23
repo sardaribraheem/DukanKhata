@@ -1,0 +1,42 @@
+name: dukan_khata
+description: "Urdu-first shop inventory + daily khata for an auto repair / spare-parts shop."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Supabase backend (auth, postgres, storage)
+  supabase_flutter: ^2.8.0
+
+  # State management
+  flutter_riverpod: ^2.6.1
+
+  # Typed navigation
+  go_router: ^14.6.0
+
+  # Voice input (Phase 4)
+  speech_to_text: ^6.6.1
+
+  # Product photos
+  image_picker: ^1.1.0
+
+  # Compress images before upload
+  image: ^4.5.1
+
+  # Compile-time env config (URL + anon key) injected via --dart-define
+  shared_preferences: ^2.5.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
