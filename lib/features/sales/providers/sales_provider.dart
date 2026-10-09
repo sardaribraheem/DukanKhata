@@ -3,9 +3,10 @@ import '../../../shared/models/sale.dart';
 import '../../inventory/providers/inventory_provider.dart';
 import '../data/sales_repository.dart';
 
-final todaySalesProvider = AsyncNotifierProvider<TodaySalesNotifier, List<Sale>>(
-  TodaySalesNotifier.new,
-);
+final todaySalesProvider =
+    AsyncNotifierProvider<TodaySalesNotifier, List<Sale>>(
+      TodaySalesNotifier.new,
+    );
 
 class TodaySalesNotifier extends AsyncNotifier<List<Sale>> {
   @override
@@ -39,6 +40,9 @@ class TodaySalesNotifier extends AsyncNotifier<List<Sale>> {
       );
       // Refresh both sales list and inventory list to keep quantities up to date
       await refresh();
+      ref.invalidate(rolling30DaySalesProvider);
+      ref.invalidate(khataSalesProvider);
+      ref.invalidate(monthlySalesProvider);
       ref.read(inventoryListProvider.notifier).refresh();
       return true;
     } catch (e) {
@@ -47,22 +51,45 @@ class TodaySalesNotifier extends AsyncNotifier<List<Sale>> {
   }
 }
 
+final selectedKhataDateProvider = StateProvider<DateTime>(
+  (ref) => DateTime.now(),
+);
+
+final khataSalesProvider = FutureProvider.autoDispose<List<Sale>>((ref) {
+  final date = ref.watch(selectedKhataDateProvider);
+  return ref.read(salesRepositoryProvider).fetchSalesForDay(date);
+});
+
+final monthlySalesProvider = FutureProvider.autoDispose<List<Sale>>((ref) {
+  final selectedDate = ref.watch(selectedKhataDateProvider);
+  return ref
+      .read(salesRepositoryProvider)
+      .fetchSalesForLast30Days(selectedDate);
+});
+
+final rolling30DaySalesProvider = FutureProvider.autoDispose<List<Sale>>((ref) {
+  return ref.read(salesRepositoryProvider).fetchSalesForLast30Days();
+});
+
 class TodaySummary {
   final double totalRevenue;
   final double totalProfit;
+  final double totalCost;
   final int totalItemsSold;
 
   const TodaySummary({
     required this.totalRevenue,
+    required this.totalCost,
     required this.totalProfit,
     required this.totalItemsSold,
   });
 
   factory TodaySummary.empty() => const TodaySummary(
-        totalRevenue: 0.0,
-        totalProfit: 0.0,
-        totalItemsSold: 0,
-      );
+    totalRevenue: 0.0,
+    totalCost: 0.0,
+    totalProfit: 0.0,
+    totalItemsSold: 0,
+  );
 }
 
 final todaySummaryProvider = Provider<TodaySummary>((ref) {
@@ -71,17 +98,20 @@ final todaySummaryProvider = Provider<TodaySummary>((ref) {
   return salesAsync.maybeWhen(
     data: (sales) {
       double revenue = 0.0;
+      double cost = 0.0;
       double profit = 0.0;
       int items = 0;
 
       for (final sale in sales) {
         revenue += sale.revenue;
+        cost += sale.costPrice * sale.quantity;
         profit += sale.profit;
         items += sale.quantity;
       }
 
       return TodaySummary(
         totalRevenue: revenue,
+        totalCost: cost,
         totalProfit: profit,
         totalItemsSold: items,
       );

@@ -22,7 +22,7 @@ dependencies:
   go_router: ^14.6.0
 
   # Voice input (Phase 4)
-  speech_to_text: ^6.6.1
+  speech_to_text: ^7.5.0
 
   # Product photos
   image_picker: ^1.1.0
@@ -33,10 +33,21 @@ dependencies:
   # Compile-time env config (URL + anon key) injected via --dart-define
   shared_preferences: ^2.5.3
 
+  # Local-first business database
+  sqflite: ^2.4.1
+  path: ^1.9.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: Share-Send-File--Streamline-Flex.png
+  remove_alpha_ios: false
 
 flutter:
   uses-material-design: true

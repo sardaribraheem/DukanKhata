@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/i18n/app_strings.dart';
+import '../../../core/i18n/locale_provider.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../../shared/widgets/big_button.dart';
@@ -43,6 +45,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
   }
 
   Future<void> _submit() async {
+    final isUrdu = ref.read(localeProvider).languageCode == 'ur';
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -52,7 +55,9 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
     final sale = double.tryParse(_saleController.text.trim()) ?? 0.0;
     final stock = int.tryParse(_stockController.text.trim()) ?? 0;
 
-    final success = await ref.read(inventoryListProvider.notifier).addProduct(
+    final success = await ref
+        .read(inventoryListProvider.notifier)
+        .addProduct(
           name: name,
           category: _selectedCategory,
           defaultCostPrice: cost,
@@ -67,16 +72,28 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
     if (success) {
       Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('نیا پروڈکٹ کامیابی سے شامل کر دیا گیا / Product added successfully'),
+        SnackBar(
+          content: Text(
+            appText(
+              isUrdu,
+              'نیا پروڈکٹ کامیابی سے شامل کر دیا گیا',
+              'Product added successfully',
+            ),
+          ),
           backgroundColor: AppColors.sellGreen,
           behavior: SnackBarBehavior.floating,
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('پروڈکٹ شامل کرنے میں خرابی پیش آئی / Failed to add product'),
+        SnackBar(
+          content: Text(
+            appText(
+              isUrdu,
+              'پروڈکٹ شامل کرنے میں خرابی پیش آئی',
+              'Failed to add product',
+            ),
+          ),
           backgroundColor: AppColors.costRed,
           behavior: SnackBarBehavior.floating,
         ),
@@ -86,6 +103,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isUrdu = ref.watch(localeProvider).languageCode == 'ur';
     return Dialog(
       backgroundColor: Colors.transparent,
       child: ConstrainedBox(
@@ -103,7 +121,11 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'نیا پروڈکٹ شامل کریں\nAdd New Product',
+                        appText(
+                          isUrdu,
+                          'نیا پروڈکٹ شامل کریں',
+                          'Add New Product',
+                        ),
                         style: AppTypography.headingMedium.copyWith(
                           color: AppColors.primary,
                         ),
@@ -120,13 +142,17 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                   TextFormField(
                     controller: _nameController,
                     style: AppTypography.bodyLarge,
-                    decoration: const InputDecoration(
-                      labelText: 'پروڈکٹ کا نام / Product Name',
+                    decoration: InputDecoration(
+                      labelText: appText(
+                        isUrdu,
+                        'پروڈکٹ کا نام',
+                        'Product Name',
+                      ),
                       prefixIcon: Icon(Icons.inventory_2_outlined),
                     ),
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
-                        return 'نام درج کریں / Enter name';
+                        return appText(isUrdu, 'نام درج کریں', 'Enter name');
                       }
                       return null;
                     },
@@ -136,8 +162,8 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                   // Category Dropdown
                   DropdownButtonFormField<String>(
                     initialValue: _selectedCategory,
-                    decoration: const InputDecoration(
-                      labelText: 'کیٹیگری / Category',
+                    decoration: InputDecoration(
+                      labelText: appText(isUrdu, 'کیٹیگری', 'Category'),
                       prefixIcon: Icon(Icons.category_outlined),
                     ),
                     items: _categories.map((cat) {
@@ -160,8 +186,12 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                           controller: _costController,
                           keyboardType: TextInputType.number,
                           style: AppTypography.bodyLarge,
-                          decoration: const InputDecoration(
-                            labelText: 'خرید قیمت / Cost (Rs.)',
+                          decoration: InputDecoration(
+                            labelText: appText(
+                              isUrdu,
+                              'خرید قیمت (روپے)',
+                              'Cost (Rs.)',
+                            ),
                             prefixIcon: Icon(Icons.money_off_rounded),
                           ),
                           validator: (val) {
@@ -178,8 +208,12 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                           controller: _saleController,
                           keyboardType: TextInputType.number,
                           style: AppTypography.bodyLarge,
-                          decoration: const InputDecoration(
-                            labelText: 'فروخت قیمت / Sale (Rs.)',
+                          decoration: InputDecoration(
+                            labelText: appText(
+                              isUrdu,
+                              'فروخت قیمت (روپے)',
+                              'Sale (Rs.)',
+                            ),
                             prefixIcon: Icon(Icons.attach_money_rounded),
                           ),
                           validator: (val) {
@@ -202,9 +236,15 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                           controller: _stockController,
                           keyboardType: TextInputType.number,
                           style: AppTypography.bodyLarge,
-                          decoration: const InputDecoration(
-                            labelText: 'ابتدائی اسٹاک / Initial Stock',
-                            prefixIcon: Icon(Icons.format_list_numbered_rounded),
+                          decoration: InputDecoration(
+                            labelText: appText(
+                              isUrdu,
+                              'ابتدائی اسٹاک',
+                              'Initial Stock',
+                            ),
+                            prefixIcon: Icon(
+                              Icons.format_list_numbered_rounded,
+                            ),
                           ),
                           validator: (val) {
                             if (val == null || int.tryParse(val) == null) {
@@ -217,7 +257,10 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: CheckboxListTile(
-                          title: Text('پسندیدہ\nFavorite', style: AppTypography.bodyMedium),
+                          title: Text(
+                            appText(isUrdu, 'پسندیدہ', 'Favorite'),
+                            style: AppTypography.bodyMedium,
+                          ),
                           value: _isFavorite,
                           activeColor: AppColors.primary,
                           onChanged: (val) {
@@ -236,7 +279,11 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                     const Center(child: CircularProgressIndicator())
                   else
                     BigButton(
-                      label: 'پروڈکٹ محفوظ کریں / Save Product',
+                      label: appText(
+                        isUrdu,
+                        'پروڈکٹ محفوظ کریں',
+                        'Save Product',
+                      ),
                       icon: Icons.check_circle_rounded,
                       backgroundColor: AppColors.primary,
                       onPressed: _submit,

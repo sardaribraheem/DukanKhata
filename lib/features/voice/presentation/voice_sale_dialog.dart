@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/i18n/app_strings.dart';
+import '../../../core/i18n/locale_provider.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../../shared/models/product.dart';
@@ -44,7 +46,9 @@ class _VoiceSaleDialogState extends ConsumerState<VoiceSaleDialog> {
     // Simulate listening delay
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
-      final phrase = _sampleVoicePhrases[DateTime.now().second % _sampleVoicePhrases.length];
+      final phrase =
+          _sampleVoicePhrases[DateTime.now().second %
+              _sampleVoicePhrases.length];
       setState(() {
         _isListening = false;
         _isAnalyzing = true;
@@ -67,13 +71,17 @@ class _VoiceSaleDialogState extends ConsumerState<VoiceSaleDialog> {
       if (phrase.contains('انجن آئل') && p.name.toLowerCase().contains('oil')) {
         found = p;
         break;
-      } else if (phrase.contains('آئل فلٹر') && p.name.toLowerCase().contains('filter')) {
+      } else if (phrase.contains('آئل فلٹر') &&
+          p.name.toLowerCase().contains('filter')) {
         found = p;
         break;
-      } else if (phrase.contains('ٹائر') && p.name.toLowerCase().contains('tire')) {
+      } else if (phrase.contains('ٹائر') &&
+          p.name.toLowerCase().contains('tire')) {
         found = p;
         break;
-      } else if (p.name.toLowerCase().contains(phrase.split(' ').last.toLowerCase())) {
+      } else if (p.name.toLowerCase().contains(
+        phrase.split(' ').last.toLowerCase(),
+      )) {
         found = p;
         break;
       }
@@ -117,7 +125,9 @@ class _VoiceSaleDialogState extends ConsumerState<VoiceSaleDialog> {
 
     setState(() => _isLoading = true);
 
-    final success = await ref.read(todaySalesProvider.notifier).recordSale(
+    final success = await ref
+        .read(todaySalesProvider.notifier)
+        .recordSale(
           productId: _matchedProduct!.id,
           quantity: _extractedQuantity,
           salePrice: _extractedPrice,
@@ -131,16 +141,28 @@ class _VoiceSaleDialogState extends ConsumerState<VoiceSaleDialog> {
     if (success) {
       Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('آواز سے فروخت کامیابی سے درج ہو گئی / Voice Sale Recorded'),
+        SnackBar(
+          content: Text(
+            appText(
+              ref.read(localeProvider).languageCode == 'ur',
+              'آواز سے فروخت کامیابی سے درج ہو گئی',
+              'Voice Sale Recorded',
+            ),
+          ),
           backgroundColor: AppColors.sellGreen,
           behavior: SnackBarBehavior.floating,
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('خرابی پیش آئی / Failed to record voice sale'),
+        SnackBar(
+          content: Text(
+            appText(
+              ref.read(localeProvider).languageCode == 'ur',
+              'خرابی پیش آئی',
+              'Failed to record voice sale',
+            ),
+          ),
           backgroundColor: AppColors.costRed,
           behavior: SnackBarBehavior.floating,
         ),
@@ -150,6 +172,7 @@ class _VoiceSaleDialogState extends ConsumerState<VoiceSaleDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isUrdu = ref.watch(localeProvider).languageCode == 'ur';
     return Dialog(
       backgroundColor: Colors.transparent,
       child: ConstrainedBox(
@@ -165,8 +188,10 @@ class _VoiceSaleDialogState extends ConsumerState<VoiceSaleDialog> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'آواز سے فروخت • Voice Entry',
-                      style: AppTypography.headingMedium.copyWith(color: AppColors.primary),
+                      appText(isUrdu, 'آواز سے فروخت', 'Voice Entry'),
+                      style: AppTypography.headingMedium.copyWith(
+                        color: AppColors.primary,
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close_rounded),
@@ -184,19 +209,26 @@ class _VoiceSaleDialogState extends ConsumerState<VoiceSaleDialog> {
                       child: Container(
                         padding: const EdgeInsets.all(28),
                         decoration: BoxDecoration(
-                          color: _isListening ? AppColors.costRed : AppColors.micAmber,
+                          color: _isListening
+                              ? AppColors.costRed
+                              : AppColors.micAmber,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: (_isListening ? AppColors.costRed : AppColors.micAmber)
-                                  .withValues(alpha: 0.4),
+                              color:
+                                  (_isListening
+                                          ? AppColors.costRed
+                                          : AppColors.micAmber)
+                                      .withValues(alpha: 0.4),
                               blurRadius: 20,
                               spreadRadius: 5,
                             ),
                           ],
                         ),
                         child: Icon(
-                          _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
+                          _isListening
+                              ? Icons.mic_rounded
+                              : Icons.mic_none_rounded,
                           size: 64,
                           color: Colors.white,
                         ),
@@ -207,10 +239,22 @@ class _VoiceSaleDialogState extends ConsumerState<VoiceSaleDialog> {
                   Center(
                     child: Text(
                       _isListening
-                          ? 'سن رہے ہیں... بولیں / Listening... Speak now'
+                          ? appText(
+                              isUrdu,
+                              'سن رہے ہیں... بولیں',
+                              'Listening... Speak now',
+                            )
                           : _isAnalyzing
-                              ? 'AI تجزیہ کر رہا ہے... / AI is extracting...'
-                              : 'مائیکروفون دبائیں اور اردو میں بولیں\nTap mic and speak in Urdu',
+                          ? appText(
+                              isUrdu,
+                              'تجزیہ ہو رہا ہے...',
+                              'AI is extracting...',
+                            )
+                          : appText(
+                              isUrdu,
+                              'مائیکروفون دبائیں اور اردو میں بولیں',
+                              'Tap mic and speak',
+                            ),
                       textAlign: TextAlign.center,
                       style: AppTypography.bodyLarge,
                     ),
@@ -221,14 +265,20 @@ class _VoiceSaleDialogState extends ConsumerState<VoiceSaleDialog> {
                   else ...[
                     const SizedBox(height: 8),
                     Text(
-                      'یا نقلی آواز کے لیے نیچے کلک کریں:',
+                      appText(
+                        isUrdu,
+                        'یا نقلی آواز کے لیے نیچے کلک کریں:',
+                        'Or tap below to simulate voice:',
+                      ),
                       style: AppTypography.caption,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
                       icon: const Icon(Icons.play_arrow_rounded),
-                      label: const Text('آواز کی نقل کریں / Simulate Voice'),
+                      label: Text(
+                        appText(isUrdu, 'آواز کی نقل کریں', 'Simulate Voice'),
+                      ),
                       onPressed: _startListeningSimulator,
                     ),
                   ],
@@ -244,17 +294,36 @@ class _VoiceSaleDialogState extends ConsumerState<VoiceSaleDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('پہچانی گئی بات / Recognized Speech:', style: AppTypography.caption),
-                        Text('“$_spokenText”', style: AppTypography.bodyLarge.copyWith(fontStyle: FontStyle.italic)),
+                        Text(
+                          '${appText(isUrdu, 'پہچانی گئی بات', 'Recognized Speech')}:',
+                          style: AppTypography.caption,
+                        ),
+                        Text(
+                          '“$_spokenText”',
+                          style: AppTypography.bodyLarge.copyWith(
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
                         const Divider(height: 20),
-                        Text('پروڈکٹ / Product: ${_matchedProduct?.name ?? "نامعلوم"}', style: AppTypography.headingMedium),
+                        Text(
+                          '${appText(isUrdu, 'پروڈکٹ', 'Product')}: ${_matchedProduct?.name ?? appText(isUrdu, 'نامعلوم', 'Unknown')}',
+                          style: AppTypography.headingMedium,
+                        ),
                         const SizedBox(height: 6),
-                        Text('مقدار / Quantity: $_extractedQuantity', style: AppTypography.bodyMedium),
-                        Text('قیمت / Price: Rs. ${_extractedPrice.toStringAsFixed(0)} each', style: AppTypography.bodyMedium),
+                        Text(
+                          '${appText(isUrdu, 'مقدار', 'Quantity')}: $_extractedQuantity',
+                          style: AppTypography.bodyMedium,
+                        ),
+                        Text(
+                          '${appText(isUrdu, 'قیمت', 'Price')}: Rs. ${_extractedPrice.toStringAsFixed(0)} each',
+                          style: AppTypography.bodyMedium,
+                        ),
                         const SizedBox(height: 8),
                         Text(
-                          'کل رقم / Total: Rs. ${(_extractedQuantity * _extractedPrice).toStringAsFixed(0)}',
-                          style: AppTypography.headingMedium.copyWith(color: AppColors.sellGreen),
+                          '${appText(isUrdu, 'کل رقم', 'Total')}: Rs. ${(_extractedQuantity * _extractedPrice).toStringAsFixed(0)}',
+                          style: AppTypography.headingMedium.copyWith(
+                            color: AppColors.sellGreen,
+                          ),
                         ),
                       ],
                     ),
@@ -268,15 +337,18 @@ class _VoiceSaleDialogState extends ConsumerState<VoiceSaleDialog> {
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: () => setState(() => _hasExtracted = false),
-                            child: const Text('دوبارہ کوشش کریں'),
+                            onPressed: () =>
+                                setState(() => _hasExtracted = false),
+                            child: Text(
+                              appText(isUrdu, 'دوبارہ کوشش کریں', 'Try again'),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           flex: 2,
                           child: BigButton(
-                            label: 'تصدیق کریں / Confirm',
+                            label: appText(isUrdu, 'تصدیق کریں', 'Confirm'),
                             icon: Icons.check_circle_rounded,
                             backgroundColor: AppColors.sellGreen,
                             onPressed: _commitVoiceSale,

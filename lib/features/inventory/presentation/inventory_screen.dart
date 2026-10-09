@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/i18n/app_strings.dart';
+import '../../../core/i18n/locale_provider.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../../shared/widgets/clay_container.dart';
@@ -17,6 +19,7 @@ class InventoryScreen extends ConsumerWidget {
     final productsAsync = ref.watch(inventoryListProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final onlyFavorites = ref.watch(onlyFavoritesProvider);
+    final isUrdu = ref.watch(localeProvider).languageCode == 'ur';
 
     final categories = [
       'All',
@@ -34,7 +37,7 @@ class InventoryScreen extends ConsumerWidget {
         backgroundColor: AppColors.background,
         elevation: 0,
         title: Text(
-          'اسٹاک مینجمنٹ / Inventory',
+          appText(isUrdu, 'اسٹاک مینجمنٹ', 'Inventory'),
           style: AppTypography.headingMedium.copyWith(color: AppColors.primary),
         ),
         iconTheme: const IconThemeData(color: AppColors.primary),
@@ -44,14 +47,14 @@ class InventoryScreen extends ConsumerWidget {
               onlyFavorites ? Icons.star_rounded : Icons.star_border_rounded,
               color: onlyFavorites ? Colors.amber : AppColors.primary,
             ),
-            tooltip: 'صرف پسندیدہ / Favorites Only',
+            tooltip: appText(isUrdu, 'صرف پسندیدہ', 'Favorites Only'),
             onPressed: () {
               ref.read(onlyFavoritesProvider.notifier).state = !onlyFavorites;
             },
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'ریش فریش / Refresh',
+            tooltip: appText(isUrdu, 'تازہ کریں', 'Refresh'),
             onPressed: () {
               ref.read(inventoryListProvider.notifier).refresh();
             },
@@ -71,7 +74,11 @@ class InventoryScreen extends ConsumerWidget {
                       ref.read(searchQueryProvider.notifier).state = val;
                     },
                     decoration: InputDecoration(
-                      hintText: 'پروڈکٹ تلاش کریں / Search products...',
+                      hintText: appText(
+                        isUrdu,
+                        'پروڈکٹ تلاش کریں',
+                        'Search products...',
+                      ),
                       prefixIcon: const Icon(Icons.search_rounded),
                       filled: true,
                       fillColor: AppColors.surface,
@@ -133,7 +140,11 @@ class InventoryScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'کوئی پروڈکٹ نہیں ملا\nNo products found',
+                          appText(
+                            isUrdu,
+                            'کوئی پروڈکٹ نہیں ملا',
+                            'No products found',
+                          ),
                           textAlign: TextAlign.center,
                           style: AppTypography.bodyLarge.copyWith(
                             color: AppColors.textSecondary,
@@ -141,7 +152,11 @@ class InventoryScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 24),
                         BigButton(
-                          label: 'نیا پروڈکٹ شامل کریں / Add Product',
+                          label: appText(
+                            isUrdu,
+                            'نیا پروڈکٹ شامل کریں',
+                            'Add Product',
+                          ),
                           icon: Icons.add_rounded,
                           backgroundColor: AppColors.primary,
                           onPressed: () {
@@ -199,7 +214,7 @@ class InventoryScreen extends ConsumerWidget {
                             ),
                             const SizedBox(width: 16),
 
-                            // Details
+                            // Details and actions share the remaining width so long names wrap safely.
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,7 +228,7 @@ class InventoryScreen extends ConsumerWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'کیٹیگری: ${product.category}',
+                                    '${appText(isUrdu, 'کیٹیگری', 'Category')}: ${product.category}',
                                     style: AppTypography.caption.copyWith(
                                       color: AppColors.textSecondary,
                                     ),
@@ -228,9 +243,15 @@ class InventoryScreen extends ConsumerWidget {
                                         ),
                                         decoration: BoxDecoration(
                                           color: isLowStock
-                                              ? AppColors.costRed.withValues(alpha: 0.1)
-                                              : AppColors.sellGreen.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(8),
+                                              ? AppColors.costRed.withValues(
+                                                  alpha: 0.1,
+                                                )
+                                              : AppColors.sellGreen.withValues(
+                                                  alpha: 0.1,
+                                                ),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                           border: Border.all(
                                             color: isLowStock
                                                 ? AppColors.costRed
@@ -238,7 +259,7 @@ class InventoryScreen extends ConsumerWidget {
                                           ),
                                         ),
                                         child: Text(
-                                          'اسٹاک / Stock: ${product.stockQuantity}',
+                                          '${appText(isUrdu, 'اسٹاک', 'Stock')}: ${product.stockQuantity}',
                                           style: AppTypography.caption.copyWith(
                                             color: isLowStock
                                                 ? AppColors.costRed
@@ -257,61 +278,58 @@ class InventoryScreen extends ConsumerWidget {
                                       ),
                                     ],
                                   ),
+                                  const SizedBox(height: 10),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 6,
+                                    children: [
+                                      ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.sellGreen,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 7,
+                                          ),
+                                          minimumSize: const Size(0, 40),
+                                        ),
+                                        icon: const Icon(
+                                          Icons.add_shopping_cart,
+                                          size: 18,
+                                        ),
+                                        //appText(isUrdu, 'اسٹاک', 'Stock')
+                                        label: Text(appText(isUrdu, 'ری اسٹاک', 'Restock')),
+                                        onPressed: () => showDialog(
+                                          context: context,
+                                          builder: (_) =>
+                                              RestockDialog(product: product),
+                                        ),
+                                      ),
+                                      OutlinedButton.icon(
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: AppColors.primary,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 7,
+                                          ),
+                                          minimumSize: const Size(0, 40),
+                                        ),
+                                        icon: const Icon(
+                                          Icons.tune_rounded,
+                                          size: 18,
+                                        ),
+                                        label: Text(appText(isUrdu, 'ایڈجسٹ', 'Adjust')),
+                                        onPressed: () => showDialog(
+                                          context: context,
+                                          builder: (_) => AdjustmentDialog(
+                                            product: product,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ],
                               ),
-                            ),
-
-                            // Quick Actions (Restock & Adjust)
-                            Column(
-                              children: [
-                                ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.sellGreen,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  icon: const Icon(Icons.add_shopping_cart,
-                                      size: 18),
-                                  label: const Text('ری اسٹاک'),
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (_) => RestockDialog(
-                                        product: product,
-                                      ),
-                                    );
-                                  },
-                                ),
-                                const SizedBox(height: 6),
-                                OutlinedButton.icon(
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: AppColors.primary,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  icon: const Icon(Icons.tune_rounded, size: 18),
-                                  label: const Text('ایڈجسٹ'),
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (_) => AdjustmentDialog(
-                                        product: product,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
                             ),
                           ],
                         ),
@@ -320,8 +338,7 @@ class InventoryScreen extends ConsumerWidget {
                   },
                 );
               },
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => Center(
                 child: Text(
                   'خرابی: $err',
@@ -335,8 +352,8 @@ class InventoryScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text(
-          'نیا پروڈکٹ / Add Product',
+        label: Text(
+          appText(isUrdu, 'نیا پروڈکٹ', 'Add Product'),
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         onPressed: () {

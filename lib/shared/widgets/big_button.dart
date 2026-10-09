@@ -41,9 +41,16 @@ class BigButton extends StatelessWidget {
               Icon(icon, color: fg, size: 28),
               const SizedBox(width: 12),
             ],
-            Text(
-              label,
-              style: AppTypography.buttonLarge.copyWith(color: fg, fontSize: 18),
+            Flexible(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.visible,
+                style: AppTypography.buttonLarge.copyWith(
+                  color: fg,
+                  fontSize: 18,
+                ),
+              ),
             ),
           ],
         ),

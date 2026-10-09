@@ -38,7 +38,9 @@ class Product {
       defaultCostPrice: (json['default_cost_price'] as num?)?.toDouble() ?? 0.0,
       defaultSalePrice: (json['default_sale_price'] as num?)?.toDouble() ?? 0.0,
       stockQuantity: json['stock_quantity'] as int? ?? 0,
-      isFavorite: json['is_favorite'] as bool? ?? false,
+      isFavorite: json['is_favorite'] is bool
+          ? json['is_favorite'] as bool
+          : (json['is_favorite'] as num?)?.toInt() == 1,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/i18n/app_strings.dart';
+import '../../../core/i18n/locale_provider.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../../shared/models/product.dart';
@@ -39,6 +41,7 @@ class _RestockDialogState extends ConsumerState<RestockDialog> {
   }
 
   Future<void> _submit() async {
+    final isUrdu = ref.read(localeProvider).languageCode == 'ur';
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -46,11 +49,12 @@ class _RestockDialogState extends ConsumerState<RestockDialog> {
     final qty = int.tryParse(_qtyController.text.trim()) ?? 0;
     final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
 
-    final success = await ref.read(inventoryListProvider.notifier).restockProduct(
+    final success = await ref
+        .read(inventoryListProvider.notifier)
+        .restockProduct(
           productId: widget.product.id,
           quantity: qty,
           purchasePrice: price,
-          currentStock: widget.product.stockQuantity,
         );
 
     if (!mounted) return;
@@ -59,16 +63,24 @@ class _RestockDialogState extends ConsumerState<RestockDialog> {
     if (success) {
       Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('اسٹاک کامیابی سے بڑھا دیا گیا / Restocked successfully'),
+        SnackBar(
+          content: Text(
+            appText(
+              isUrdu,
+              'اسٹاک کامیابی سے بڑھا دیا گیا',
+              'Restocked successfully',
+            ),
+          ),
           backgroundColor: AppColors.sellGreen,
           behavior: SnackBarBehavior.floating,
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('ری اسٹاک میں خرابی / Failed to restock'),
+        SnackBar(
+          content: Text(
+            appText(isUrdu, 'ری اسٹاک میں خرابی', 'Failed to restock'),
+          ),
           backgroundColor: AppColors.costRed,
           behavior: SnackBarBehavior.floating,
         ),
@@ -78,6 +90,7 @@ class _RestockDialogState extends ConsumerState<RestockDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isUrdu = ref.watch(localeProvider).languageCode == 'ur';
     return Dialog(
       backgroundColor: Colors.transparent,
       child: ConstrainedBox(
@@ -96,7 +109,7 @@ class _RestockDialogState extends ConsumerState<RestockDialog> {
                     children: [
                       Expanded(
                         child: Text(
-                          'ری اسٹاک: ${widget.product.name}',
+                          '${appText(isUrdu, 'ری اسٹاک', 'Restock')}: ${widget.product.name}',
                           style: AppTypography.headingMedium.copyWith(
                             color: AppColors.primary,
                           ),
@@ -110,7 +123,7 @@ class _RestockDialogState extends ConsumerState<RestockDialog> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'موجودہ اسٹاک / Current Stock: ${widget.product.stockQuantity}',
+                    '${appText(isUrdu, 'موجودہ اسٹاک', 'Current Stock')}: ${widget.product.stockQuantity}',
                     style: AppTypography.bodyMedium,
                   ),
                   const Divider(height: 24),
@@ -120,12 +133,18 @@ class _RestockDialogState extends ConsumerState<RestockDialog> {
                     controller: _qtyController,
                     keyboardType: TextInputType.number,
                     style: AppTypography.bodyLarge,
-                    decoration: const InputDecoration(
-                      labelText: 'کتنا نیا اسٹاک آیا؟ / Quantity to Add',
+                    decoration: InputDecoration(
+                      labelText: appText(
+                        isUrdu,
+                        'کتنا نیا اسٹاک آیا؟',
+                        'Quantity to Add',
+                      ),
                       prefixIcon: Icon(Icons.add_box_rounded),
                     ),
                     validator: (val) {
-                      if (val == null || int.tryParse(val) == null || int.parse(val) <= 0) {
+                      if (val == null ||
+                          int.tryParse(val) == null ||
+                          int.parse(val) <= 0) {
                         return 'صحیح مقدار درج کریں';
                       }
                       return null;
@@ -138,8 +157,12 @@ class _RestockDialogState extends ConsumerState<RestockDialog> {
                     controller: _priceController,
                     keyboardType: TextInputType.number,
                     style: AppTypography.bodyLarge,
-                    decoration: const InputDecoration(
-                      labelText: 'فی یونٹ خرید قیمت / Purchase Price (Rs.)',
+                    decoration: InputDecoration(
+                      labelText: appText(
+                        isUrdu,
+                        'فی یونٹ خرید قیمت (روپے)',
+                        'Purchase Price (Rs.)',
+                      ),
                       prefixIcon: Icon(Icons.money_rounded),
                     ),
                     validator: (val) {
@@ -155,7 +178,11 @@ class _RestockDialogState extends ConsumerState<RestockDialog> {
                     const Center(child: CircularProgressIndicator())
                   else
                     BigButton(
-                      label: 'اسٹاک میں شامل کریں / Confirm Restock',
+                      label: appText(
+                        isUrdu,
+                        'اسٹاک میں شامل کریں',
+                        'Confirm Restock',
+                      ),
                       icon: Icons.check_circle_rounded,
                       backgroundColor: AppColors.sellGreen,
                       onPressed: _submit,

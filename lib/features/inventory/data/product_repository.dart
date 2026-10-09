@@ -1,46 +1,46 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/logging/app_logger.dart';
+import '../../../core/storage/local_database.dart';
 import '../../../shared/models/product.dart';
 
 final productRepositoryProvider = Provider<ProductRepository>((ref) {
-  return ProductRepository(Supabase.instance.client);
+  return ProductRepository(LocalDatabase.instance);
 });
 
 class ProductRepository {
-  final SupabaseClient _client;
+  final LocalDatabase _localDatabase;
 
-  ProductRepository(this._client);
-
-  String? get _userId => _client.auth.currentUser?.id;
+  ProductRepository(this._localDatabase);
 
   Future<List<Product>> fetchProducts({
     String? category,
     String? searchQuery,
     bool onlyFavorites = false,
   }) async {
-    var query = _client.from('products').select();
-
-    if (_userId != null) {
-      query = query.eq('user_id', _userId!);
-    }
-
+    final db = await _localDatabase.database;
+    final filters = <String>[];
+    final args = <Object?>[];
     if (category != null && category != 'All') {
-      query = query.eq('category', category);
+      filters.add('category = ?');
+      args.add(category);
     }
-
-    if (onlyFavorites) {
-      query = query.eq('is_favorite', true);
-    }
-
-    final response = await query.order('name', ascending: true);
-    final list = (response as List).map((e) => Product.fromJson(e)).toList();
-
-    if (searchQuery != null && searchQuery.trim().isNotEmpty) {
-      final q = searchQuery.toLowerCase().trim();
-      return list.where((p) => p.name.toLowerCase().contains(q) || p.category.toLowerCase().contains(q)).toList();
-    }
-
-    return list;
+    if (onlyFavorites) filters.add('is_favorite = 1');
+    final rows = await db.query(
+      'products',
+      where: filters.isEmpty ? null : filters.join(' AND '),
+      whereArgs: args,
+      orderBy: 'name COLLATE NOCASE ASC',
+    );
+    final products = rows.map(Product.fromJson).toList();
+    final query = searchQuery?.trim().toLowerCase();
+    if (query == null || query.isEmpty) return products;
+    return products
+        .where(
+          (product) =>
+              product.name.toLowerCase().contains(query) ||
+              product.category.toLowerCase().contains(query),
+        )
+        .toList();
   }
 
   Future<void> addProduct({
@@ -52,41 +52,36 @@ class ProductRepository {
     required int initialStock,
     required bool isFavorite,
   }) async {
-    if (_userId == null) throw Exception('User not authenticated');
-
-    await _client.from('products').insert({
-      'user_id': _userId,
-      'name': name.trim(),
-      'category': category,
-      'photo_url': photoUrl,
-      'default_cost_price': defaultCostPrice,
-      'default_sale_price': defaultSalePrice,
-      'stock_quantity': initialStock,
-      'is_favorite': isFavorite,
-    });
-
-    // If initial stock > 0, also record an initial stock purchase
-    if (initialStock > 0) {
-      // Get the newly inserted product ID
-      final res = await _client
-          .from('products')
-          .select('id')
-          .eq('user_id', _userId!)
-          .eq('name', name.trim())
-          .order('created_at', ascending: false)
-          .limit(1)
-          .maybeSingle();
-
-      if (res != null) {
-        final productId = res['id'] as String;
-        await _client.from('stock_purchases').insert({
-          'user_id': _userId,
-          'product_id': productId,
+    final db = await _localDatabase.database;
+    final now = DateTime.now().toUtc().toIso8601String();
+    final id = 'product-${DateTime.now().microsecondsSinceEpoch}';
+    await db.transaction((txn) async {
+      await txn.insert('products', {
+        'id': id,
+        'user_id': localUserId,
+        'name': name.trim(),
+        'category': category,
+        'photo_url': photoUrl,
+        'default_cost_price': defaultCostPrice,
+        'default_sale_price': defaultSalePrice,
+        'stock_quantity': initialStock,
+        'is_favorite': isFavorite ? 1 : 0,
+        'created_at': now,
+        'updated_at': now,
+      });
+      if (initialStock > 0) {
+        await txn.insert('stock_purchases', {
+          'product_id': id,
           'quantity': initialStock,
           'purchase_price': defaultCostPrice,
           'total_cost': initialStock * defaultCostPrice,
+          'created_at': now,
         });
       }
+    });
+    await _log('PRODUCT CREATED', {'product_id': id, 'name': name.trim()});
+    if (initialStock > 0) {
+      await _log('RESTOCK SAVED', {'product_id': id, 'quantity': initialStock});
     }
   }
 
@@ -99,70 +94,117 @@ class ProductRepository {
     required double defaultSalePrice,
     required bool isFavorite,
   }) async {
-    await _client.from('products').update({
-      'name': name.trim(),
-      'category': category,
-      'photo_url': photoUrl,
-      'default_cost_price': defaultCostPrice,
-      'default_sale_price': defaultSalePrice,
-      'is_favorite': isFavorite,
-      'updated_at': DateTime.now().toIso8601String(),
-    }).eq('id', id);
+    final db = await _localDatabase.database;
+    await db.update(
+      'products',
+      {
+        'name': name.trim(),
+        'category': category,
+        'photo_url': photoUrl,
+        'default_cost_price': defaultCostPrice,
+        'default_sale_price': defaultSalePrice,
+        'is_favorite': isFavorite ? 1 : 0,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    await _log('PRODUCT EDITED', {'product_id': id, 'name': name.trim()});
   }
 
   Future<void> toggleFavorite(String id, bool currentStatus) async {
-    await _client.from('products').update({
-      'is_favorite': !currentStatus,
-      'updated_at': DateTime.now().toIso8601String(),
-    }).eq('id', id);
+    final db = await _localDatabase.database;
+    await db.update(
+      'products',
+      {
+        'is_favorite': currentStatus ? 0 : 1,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<void> restockProduct({
     required String productId,
     required int quantity,
     required double purchasePrice,
-    required int currentStock,
   }) async {
-    if (_userId == null) throw Exception('User not authenticated');
-
-    // 1. Insert stock purchase
-    await _client.from('stock_purchases').insert({
-      'user_id': _userId,
+    final db = await _localDatabase.database;
+    final now = DateTime.now().toUtc().toIso8601String();
+    await db.transaction((txn) async {
+      final rows = await txn.query(
+        'products',
+        columns: ['stock_quantity'],
+        where: 'id = ?',
+        whereArgs: [productId],
+        limit: 1,
+      );
+      if (rows.isEmpty) throw StateError('Product not found');
+      final currentStock =
+          (rows.single['stock_quantity'] as num?)?.toInt() ?? 0;
+      await txn.insert('stock_purchases', {
+        'product_id': productId,
+        'quantity': quantity,
+        'purchase_price': purchasePrice,
+        'total_cost': quantity * purchasePrice,
+        'created_at': now,
+      });
+      await txn.update(
+        'products',
+        {'stock_quantity': currentStock + quantity, 'updated_at': now},
+        where: 'id = ?',
+        whereArgs: [productId],
+      );
+    });
+    await _log('RESTOCK SAVED', {
       'product_id': productId,
       'quantity': quantity,
-      'purchase_price': purchasePrice,
-      'total_cost': quantity * purchasePrice,
     });
-
-    // 2. Update stock quantity on product
-    final newStock = currentStock + quantity;
-    await _client.from('products').update({
-      'stock_quantity': newStock,
-      'updated_at': DateTime.now().toIso8601String(),
-    }).eq('id', productId);
   }
 
   Future<void> adjustInventory({
     required String productId,
     required int quantityChange,
     required String reason,
-    required int currentStock,
   }) async {
-    if (_userId == null) throw Exception('User not authenticated');
-
-    // 1. Insert inventory adjustment
-    await _client.from('inventory_adjustments').insert({
-      'user_id': _userId,
+    final db = await _localDatabase.database;
+    final now = DateTime.now().toUtc().toIso8601String();
+    await db.transaction((txn) async {
+      final rows = await txn.query(
+        'products',
+        columns: ['stock_quantity'],
+        where: 'id = ?',
+        whereArgs: [productId],
+        limit: 1,
+      );
+      if (rows.isEmpty) throw StateError('Product not found');
+      final currentStock =
+          (rows.single['stock_quantity'] as num?)?.toInt() ?? 0;
+      await txn.insert('inventory_adjustments', {
+        'product_id': productId,
+        'quantity_change': quantityChange,
+        'reason': reason,
+        'created_at': now,
+      });
+      await txn.update(
+        'products',
+        {
+          'stock_quantity': (currentStock + quantityChange).clamp(0, 1 << 30),
+          'updated_at': now,
+        },
+        where: 'id = ?',
+        whereArgs: [productId],
+      );
+    });
+    await _log('INVENTORY ADJUSTMENT SAVED', {
       'product_id': productId,
       'quantity_change': quantityChange,
-      'reason': reason,
     });
+  }
 
-    // 2. Update stock quantity
-    final newStock = currentStock + quantityChange;
-    await _client.from('products').update({
-      'stock_quantity': newStock < 0 ? 0 : newStock,
-      'updated_at': DateTime.now().toIso8601String(),
-    }).eq('id', productId);
+  Future<void> _log(String event, Map<String, Object?> values) async {
+    AppLogger.business(event, values);
+    await _localDatabase.log(event, values);
   }
 }

@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 class Sale {
   final String id;
   final String userId;
-  final String productId;
-  final String? productName; // Joined or fetched for display
+  final String? productId;
+  final String productName;
   final int quantity;
   final double costPrice;
   final double salePrice;
@@ -18,7 +18,7 @@ class Sale {
     required this.id,
     required this.userId,
     required this.productId,
-    this.productName,
+    required this.productName,
     required this.quantity,
     required this.costPrice,
     required this.salePrice,
@@ -33,7 +33,13 @@ class Sale {
       id: json['id'] as String,
       userId: json['user_id'] as String,
       productId: json['product_id'] as String,
-      productName: productName ?? (json['products'] != null ? json['products']['name'] as String? : null),
+      productName:
+          productName ??
+          (json['products'] != null
+              ? json['products']['name'] as String?
+              : null) ??
+          json['product_name_snapshot'] as String? ??
+          'Unknown Product',
       quantity: json['quantity'] as int? ?? 1,
       costPrice: (json['cost_price'] as num?)?.toDouble() ?? 0.0,
       salePrice: (json['sale_price'] as num?)?.toDouble() ?? 0.0,
@@ -51,6 +57,7 @@ class Sale {
       'id': id,
       'user_id': userId,
       'product_id': productId,
+      'product_name_snapshot': productName,
       'quantity': quantity,
       'cost_price': costPrice,
       'sale_price': salePrice,

@@ -8,9 +8,10 @@ final searchQueryProvider = StateProvider<String>((ref) => '');
 final onlyFavoritesProvider = StateProvider<bool>((ref) => false);
 
 // Inventory product list provider
-final inventoryListProvider = AsyncNotifierProvider<InventoryListNotifier, List<Product>>(
-  InventoryListNotifier.new,
-);
+final inventoryListProvider =
+    AsyncNotifierProvider<InventoryListNotifier, List<Product>>(
+      InventoryListNotifier.new,
+    );
 
 class InventoryListNotifier extends AsyncNotifier<List<Product>> {
   @override
@@ -112,7 +113,6 @@ class InventoryListNotifier extends AsyncNotifier<List<Product>> {
     required String productId,
     required int quantity,
     required double purchasePrice,
-    required int currentStock,
   }) async {
     try {
       final repo = ref.read(productRepositoryProvider);
@@ -120,7 +120,6 @@ class InventoryListNotifier extends AsyncNotifier<List<Product>> {
         productId: productId,
         quantity: quantity,
         purchasePrice: purchasePrice,
-        currentStock: currentStock,
       );
       await refresh();
       return true;
@@ -133,7 +132,6 @@ class InventoryListNotifier extends AsyncNotifier<List<Product>> {
     required String productId,
     required int quantityChange,
     required String reason,
-    required int currentStock,
   }) async {
     try {
       final repo = ref.read(productRepositoryProvider);
@@ -141,7 +139,6 @@ class InventoryListNotifier extends AsyncNotifier<List<Product>> {
         productId: productId,
         quantityChange: quantityChange,
         reason: reason,
-        currentStock: currentStock,
       );
       await refresh();
       return true;

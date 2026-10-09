@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/i18n/app_strings.dart';
+import '../../../core/i18n/locale_provider.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../../shared/models/product.dart';
@@ -48,21 +50,36 @@ class _ManualSaleDialogState extends ConsumerState<ManualSaleDialog> {
   }
 
   Future<void> _confirmSale() async {
+    final isUrdu = ref.read(localeProvider).languageCode == 'ur';
     if (_selectedProduct == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('براہ کرم پروڈکٹ منتخب کریں / Please select a product'),
+        SnackBar(
+          content: Text(
+            appText(
+              isUrdu,
+              'براہ کرم پروڈکٹ منتخب کریں',
+              'Please select a product',
+            ),
+          ),
           backgroundColor: AppColors.costRed,
         ),
       );
       return;
     }
 
-    final salePrice = double.tryParse(_priceController.text.trim()) ?? _selectedProduct!.defaultSalePrice;
+    final salePrice =
+        double.tryParse(_priceController.text.trim()) ??
+        _selectedProduct!.defaultSalePrice;
     if (salePrice <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('صحیح فروخت قیمت درج کریں / Enter valid sale price'),
+        SnackBar(
+          content: Text(
+            appText(
+              isUrdu,
+              'صحیح فروخت قیمت درج کریں',
+              'Enter valid sale price',
+            ),
+          ),
           backgroundColor: AppColors.costRed,
         ),
       );
@@ -71,8 +88,14 @@ class _ManualSaleDialogState extends ConsumerState<ManualSaleDialog> {
 
     if (_selectedProduct!.stockQuantity < _quantity) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('اسٹاک میں اتنی مقدار موجود نہیں ہے / Not enough stock available'),
+        SnackBar(
+          content: Text(
+            appText(
+              isUrdu,
+              'اسٹاک میں اتنی مقدار موجود نہیں ہے',
+              'Not enough stock available',
+            ),
+          ),
           backgroundColor: AppColors.costRed,
         ),
       );
@@ -81,7 +104,9 @@ class _ManualSaleDialogState extends ConsumerState<ManualSaleDialog> {
 
     setState(() => _isLoading = true);
 
-    final success = await ref.read(todaySalesProvider.notifier).recordSale(
+    final success = await ref
+        .read(todaySalesProvider.notifier)
+        .recordSale(
           productId: _selectedProduct!.id,
           quantity: _quantity,
           salePrice: salePrice,
@@ -95,16 +120,28 @@ class _ManualSaleDialogState extends ConsumerState<ManualSaleDialog> {
     if (success) {
       Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('فروخت کامیابی سے درج ہو گئی / Sale recorded successfully'),
+        SnackBar(
+          content: Text(
+            appText(
+              isUrdu,
+              'فروخت کامیابی سے درج ہو گئی',
+              'Sale recorded successfully',
+            ),
+          ),
           backgroundColor: AppColors.sellGreen,
           behavior: SnackBarBehavior.floating,
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('فروخت درج کرنے میں خرابی / Failed to record sale'),
+        SnackBar(
+          content: Text(
+            appText(
+              isUrdu,
+              'فروخت درج کرنے میں خرابی',
+              'Failed to record sale',
+            ),
+          ),
           backgroundColor: AppColors.costRed,
           behavior: SnackBarBehavior.floating,
         ),
@@ -115,7 +152,10 @@ class _ManualSaleDialogState extends ConsumerState<ManualSaleDialog> {
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(inventoryListProvider);
-    final salePrice = double.tryParse(_priceController.text.trim()) ?? (_selectedProduct?.defaultSalePrice ?? 0.0);
+    final isUrdu = ref.watch(localeProvider).languageCode == 'ur';
+    final salePrice =
+        double.tryParse(_priceController.text.trim()) ??
+        (_selectedProduct?.defaultSalePrice ?? 0.0);
     final totalRevenue = _quantity * salePrice;
     final totalCost = _quantity * (_selectedProduct?.defaultCostPrice ?? 0.0);
     final totalProfit = totalRevenue - totalCost;
@@ -135,8 +175,14 @@ class _ManualSaleDialogState extends ConsumerState<ManualSaleDialog> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'دستی فروخت درج کریں\nManual Sale Entry',
-                      style: AppTypography.headingMedium.copyWith(color: AppColors.primary),
+                      appText(
+                        isUrdu,
+                        'دستی فروخت درج کریں',
+                        'Manual Sale Entry',
+                      ),
+                      style: AppTypography.headingMedium.copyWith(
+                        color: AppColors.primary,
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close_rounded),
@@ -151,15 +197,19 @@ class _ManualSaleDialogState extends ConsumerState<ManualSaleDialog> {
                   data: (products) {
                     return DropdownButtonFormField<Product>(
                       initialValue: _selectedProduct,
-                      decoration: const InputDecoration(
-                        labelText: 'پروڈکٹ منتخب کریں / Select Product',
+                      decoration: InputDecoration(
+                        labelText: appText(
+                          isUrdu,
+                          'پروڈکٹ منتخب کریں',
+                          'Select Product',
+                        ),
                         prefixIcon: Icon(Icons.inventory_2_outlined),
                       ),
                       items: products.map((p) {
                         return DropdownMenuItem(
                           value: p,
                           child: Text(
-                            '${p.name} (اسٹاک: ${p.stockQuantity})',
+                            '${p.name} (${appText(isUrdu, 'اسٹاک', 'Stock')}: ${p.stockQuantity})',
                             style: AppTypography.bodyLarge,
                           ),
                         );
@@ -177,25 +227,46 @@ class _ManualSaleDialogState extends ConsumerState<ManualSaleDialog> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('مقدار / Quantity:', style: AppTypography.bodyLarge),
+                      Text(
+                        '${appText(isUrdu, 'مقدار', 'Quantity')}:',
+                        style: AppTypography.bodyLarge,
+                      ),
                       Row(
                         children: [
                           IconButton.filled(
-                            style: IconButton.styleFrom(backgroundColor: AppColors.surface),
-                            icon: const Icon(Icons.remove_rounded, color: AppColors.primary),
-                            onPressed: _quantity > 1 ? () => setState(() => _quantity--) : null,
+                            style: IconButton.styleFrom(
+                              backgroundColor: AppColors.surface,
+                            ),
+                            icon: const Icon(
+                              Icons.remove_rounded,
+                              color: AppColors.primary,
+                            ),
+                            onPressed: _quantity > 1
+                                ? () => setState(() => _quantity--)
+                                : null,
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
                             child: Text(
                               '$_quantity',
-                              style: AppTypography.displayMedium.copyWith(fontSize: 22),
+                              style: AppTypography.displayMedium.copyWith(
+                                fontSize: 22,
+                              ),
                             ),
                           ),
                           IconButton.filled(
-                            style: IconButton.styleFrom(backgroundColor: AppColors.surface),
-                            icon: const Icon(Icons.add_rounded, color: AppColors.primary),
-                            onPressed: _quantity < _selectedProduct!.stockQuantity
+                            style: IconButton.styleFrom(
+                              backgroundColor: AppColors.surface,
+                            ),
+                            icon: const Icon(
+                              Icons.add_rounded,
+                              color: AppColors.primary,
+                            ),
+                            onPressed:
+                                _quantity < _selectedProduct!.stockQuantity
                                 ? () => setState(() => _quantity++)
                                 : null,
                           ),
@@ -212,8 +283,13 @@ class _ManualSaleDialogState extends ConsumerState<ManualSaleDialog> {
                     style: AppTypography.bodyLarge,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      labelText: 'اصل فروخت قیمت / Sale Price (Rs.)',
-                      helperText: 'معمول کی قیمت: Rs. ${_selectedProduct!.defaultSalePrice.toStringAsFixed(0)}',
+                      labelText: appText(
+                        isUrdu,
+                        'اصل فروخت قیمت (روپے)',
+                        'Sale Price (Rs.)',
+                      ),
+                      helperText:
+                          '${appText(isUrdu, 'معمول کی قیمت', 'Usual price')}: Rs. ${_selectedProduct!.defaultSalePrice.toStringAsFixed(0)}',
                       prefixIcon: const Icon(Icons.attach_money_rounded),
                     ),
                   ),
@@ -225,17 +301,24 @@ class _ManualSaleDialogState extends ConsumerState<ManualSaleDialog> {
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.15),
+                      ),
                     ),
                     child: Column(
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('کل رقم / Total Revenue:', style: AppTypography.bodyMedium),
+                            Text(
+                              '${appText(isUrdu, 'کل رقم', 'Total Revenue')}:',
+                              style: AppTypography.bodyMedium,
+                            ),
                             Text(
                               'Rs. ${totalRevenue.toStringAsFixed(0)}',
-                              style: AppTypography.headingMedium.copyWith(color: AppColors.sellGreen),
+                              style: AppTypography.headingMedium.copyWith(
+                                color: AppColors.sellGreen,
+                              ),
                             ),
                           ],
                         ),
@@ -243,10 +326,15 @@ class _ManualSaleDialogState extends ConsumerState<ManualSaleDialog> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('اندازاً منافع / Estimated Profit:', style: AppTypography.bodyMedium),
+                            Text(
+                              '${appText(isUrdu, 'اندازاً منافع', 'Estimated Profit')}:',
+                              style: AppTypography.bodyMedium,
+                            ),
                             Text(
                               'Rs. ${totalProfit.toStringAsFixed(0)}',
-                              style: AppTypography.headingMedium.copyWith(color: AppColors.primary),
+                              style: AppTypography.headingMedium.copyWith(
+                                color: AppColors.primary,
+                              ),
                             ),
                           ],
                         ),
@@ -260,7 +348,7 @@ class _ManualSaleDialogState extends ConsumerState<ManualSaleDialog> {
                   const Center(child: CircularProgressIndicator())
                 else
                   BigButton(
-                    label: 'فروخت درج کریں / Confirm Sale',
+                    label: appText(isUrdu, 'فروخت درج کریں', 'Confirm Sale'),
                     icon: Icons.check_circle_rounded,
                     backgroundColor: AppColors.sellGreen,
                     onPressed: _confirmSale,

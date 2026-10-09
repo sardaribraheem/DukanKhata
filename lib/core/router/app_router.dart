@@ -1,54 +1,48 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/inventory/presentation/inventory_screen.dart';
 import '../../features/sales/presentation/todays_khata_screen.dart';
-import '../config/supabase.dart';
+import '../../features/settings/presentation/settings_screen.dart';
+import '../../shared/widgets/app_scaffold_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
-
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
-      final isAuthenticated = authState.value?.session != null ||
-          Supabase.instance.client.auth.currentUser != null;
-
-      final isLoggingIn = state.uri.path == '/login';
-
-      if (!isAuthenticated) {
-        return isLoggingIn ? null : '/login';
-      }
-
-      if (isLoggingIn || state.uri.path == '/') {
+      // Development mode is local-first: authentication remains available but
+      // does not block access to the local shop workspace.
+      if (state.uri.path == '/login' || state.uri.path == '/') {
         return '/home';
       }
 
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      ShellRoute(
+        builder: (context, state, child) => AppScaffoldShell(child: child),
+        routes: [
+          GoRoute(
+            path: '/home',
+            builder: (context, state) => const HomeScreen(),
+          ),
+          GoRoute(
+            path: '/inventory',
+            builder: (context, state) => const InventoryScreen(),
+          ),
+          GoRoute(
+            path: '/khata',
+            builder: (context, state) => const TodaysKhataScreen(),
+          ),
+          GoRoute(
+            path: '/settings',
+            builder: (context, state) => const SettingsScreen(),
+          ),
+        ],
       ),
-      GoRoute(
-        path: '/home',
-        builder: (context, state) => const HomeScreen(),
-      ),
-      GoRoute(
-        path: '/inventory',
-        builder: (context, state) => const InventoryScreen(),
-      ),
-      GoRoute(
-        path: '/khata',
-        builder: (context, state) => const TodaysKhataScreen(),
-      ),
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const HomeScreen(),
-      ),
+      GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
     ],
   );
 });
