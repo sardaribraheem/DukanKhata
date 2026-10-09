@@ -1,4 +1,4 @@
-# dukan_khata
+# DukanKhata
 
 A new Flutter project.
 
